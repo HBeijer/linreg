@@ -18,9 +18,9 @@ linreg <- function(formula,data){
   X <- model.matrix(formula,data)
   y <- as.matrix(data[all.vars(formula)[1]])
   # REGRESSION COEFFICIENTS
-  beta_hat <- solve(t(X) %% X) %% t(X) %% y
+  beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
   # THE FITTED VALUES
-  y_hat <- X %% beta_hat
+  y_hat <- X %*% beta_hat
   # THE RESIDUALS
   e_hat <- y - y_hat
   # THE DEGREES OF FREEDOM
@@ -28,9 +28,9 @@ linreg <- function(formula,data){
   p <- ncol(X)
   df <- n-p
   # THE RESIDUAL VARIANCE
-  sigma2_hat <- as.numeric((t(e_hat) %% e_hat) / df)
+  sigma2_hat <- as.numeric((t(e_hat) %*% e_hat) / df)
   # THE VARIANCE OF THE REGRESSION COEFS (obs covmatrix)
-  variance_of_Beta <- sigma2_hat * solve( t(X) %% X)
+  variance_of_Beta <- sigma2_hat * solve( t(X) %*% X)
   # T VALUES FOR EACH COEFS (use diag for bcs of the covariance matrix)
   t <- as.numeric(beta_hat) / sqrt(diag(variance_of_Beta))
   # P VALUES FOR T TEST
