@@ -44,7 +44,8 @@ linreg <- function(formula,data){
     y_hat = y_hat,
     e_hat = e_hat,
     df = df,
-    sigma2_hat = sigma2_hat
+    sigma2_hat = sigma2_hat,
+    X = X
   )
   # CHANGING FROM CLASS "list" TO "linreg"
   class(linreg) <- "linreg"
