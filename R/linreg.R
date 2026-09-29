@@ -32,19 +32,19 @@ linreg <- function(formula,data){
   # THE VARIANCE OF THE REGRESSION COEFS (obs covmatrix)
   variance_of_Beta <- sigma2_hat * solve( t(X) %*% X)
   # T VALUES FOR EACH COEFS (use diag for bcs of the covariance matrix)
-  t <- as.numeric(beta_hat) / sqrt(diag(variance_of_Beta))
+  t_value <- as.numeric(beta_hat) / sqrt(diag(variance_of_Beta))
   # P VALUES FOR T TEST
   p_values <- round(2 * (1- pt(abs(t),df=df)),5)
   # SAVING EVERYTHING IN A LIST
   linreg <- list(
     beta_hat = beta_hat,
     variance_of_Beta = variance_of_Beta,
-    t = t,
+    t = t_value,
     p = p_values,
-    y_hat,
-    e_hat,
-    df,
-    sigma2_hat
+    y_hat = y_hat,
+    e_hat = e_hat,
+    df = df,
+    sigma2_hat = sigma2_hat
   )
   # CHANGING FROM CLASS "list" TO "linreg"
   class(linreg) <- "linreg"
