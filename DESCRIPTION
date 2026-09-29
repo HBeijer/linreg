@@ -1,6 +1,6 @@
 Package: linreg
 Type: Package
-Title: Multiple Linear Regression Using Ordinary Least SquaresVersion: 0.1.0
+Title: Multiple Linear Regression Using Ordinary Least Squares
 Version: 0.1.0
 Authors@R: c(
     person(
