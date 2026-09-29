@@ -1,13 +1,20 @@
-#' The method coef() is used to obtain the coefficients which was estimated in the model
+#' Extract coefficients from a linreg object
 #'
-#' @param x is the object of the class of which the model is saved to.
+#' Returns the coefficients estimated by the linear regression model.
+#'
+#' @param object An object of class \code{linreg}.
+#' @param ... Additional arguments.
+#'
+#' @return A named numeric vector containing the coefficients.
+#' @importFrom stats coef
 #' @export
+coef.linreg <- function(object, ...) {
 
-coef.linreg <- function(x){
-  # Wrote the code in a dumb way from the beginning, change some things for it to
-  # actually be a vector...
-  coefficients <- as.vector(model$beta_hat)
-  names(coefficients) <- rownames(model$beta_hat)
+  # Convert the coefficient matrix into a numeric vector
+  coefficients <- as.numeric(object$beta_hat)
 
-  return(coefficients)
+  # Use the design-matrix column names as coefficient names
+  names(coefficients) <- colnames(object$X)
+
+  coefficients
 }

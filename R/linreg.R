@@ -13,9 +13,10 @@
 #' @export
 
 linreg <- function(formula,data){
+  model_call <- match.call()
   # We begin by getting det design matrix (intercept and variables) and also the
   # responsvariable.
-  X <- model.matrix(formula,data)
+  X <- stats::model.matrix(formula,data)
   y <- as.matrix(data[all.vars(formula)[1]])
   # REGRESSION COEFFICIENTS
   beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
@@ -34,9 +35,10 @@ linreg <- function(formula,data){
   # T VALUES FOR EACH COEFS (use diag for bcs of the covariance matrix)
   t_value <- as.numeric(beta_hat) / sqrt(diag(variance_of_Beta))
   # P VALUES FOR T TEST
-  p_values <- round(2 * (1- pt(abs(t_value),df=df)),5)
+  p_values <- round(2 * (1- stats::pt(abs(t_value),df=df)),5)
   # SAVING EVERYTHING IN A LIST
   linreg <- list(
+    call = model_call,
     beta_hat = beta_hat,
     variance_of_Beta = variance_of_Beta,
     t = t_value,

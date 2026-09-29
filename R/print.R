@@ -1,10 +1,19 @@
-#' This is an implementation of a print function for the linreg class. It
-#' prints out the estimated coefficients.
+#' Print a linreg object
 #'
-#' @param x is the object of the class of which the model is saved to.
+#' Prints the model call and its estimated coefficients.
+#'
+#' @param x An object of class \code{linreg}.
+#' @param ... Additional arguments.
+#'
+#' @return Invisibly returns the original \code{linreg} object.
 #' @export
+print.linreg <- function(x, ...) {
 
-print.linreg <- function(x){
-  cat("Coefficients:\n")
-  print(x$beta_hat)
+  cat("\nCall:\n")
+  print(x$call)
+
+  cat("\nCoefficients:\n")
+  print(coef(x))
+
+  invisible(x)
 }

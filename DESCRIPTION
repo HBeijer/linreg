@@ -1,22 +1,21 @@
 Package: linreg
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Multiple Linear Regression Using Ordinary Least SquaresVersion: 0.1.0
 Version: 0.1.0
 Authors@R: c(
     person(
       "Hampus", "Beijer",
       email = "hambe399@student.liu.se",
-      role = "aut","cre""
+      role = c("aut","cre")
     ),
     person(
       "Thai", "Pham",
       email = "duyph635@student.liu.se",
-      role = c("aut")
+      role = "aut"
     )
   )
-Description: This package is used to estimate a multiple linear regression model using the ordinary least squares method for estimating the model parameters.
-    Continuation lines should be indented.
-License: What license is it under?
+Description: Estimates multiple linear regression models using ordinary least squares and provides methods for inspecting and plotting fitted model objects.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 URL: https://github.com/HBeijer/linreg
@@ -26,3 +25,4 @@ Suggests:
 Config/testthat/edition: 3
 Imports: 
     ggplot2
+RoxygenNote: 7.3.2

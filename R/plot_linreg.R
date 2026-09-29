@@ -53,7 +53,7 @@ plot.linreg <- function(x, ...) {
         # this layer inherits them from the main ggplot() call.
         # group = 1 (group identifier) places all summary points in one group, allowing geom = "line" to connect them.
         ggplot2::aes(group = 1),
-        fun = median,
+        fun = stats::median,
         geom = "line",
         colour = "red",
         linewidth = 0.7
@@ -88,9 +88,7 @@ plot.linreg <- function(x, ...) {
       ggplot2::geom_text(
         data = plot_data[labelled_scale_observations, ],
         ggplot2::aes(label = observation),
-        vjust = -0.5,
-        check_overlap = TRUE
-      ) +
+        vjust = -0.5) +
       ggplot2::labs(
         title = "Scale-Location",
         x = "Fitted values",

@@ -1,8 +1,14 @@
-#' The method resid() is used to obtain the residuals which was estimated in the model
+#' Extract residuals from a linreg object
 #'
-#' @param x is the object of the class of which the model is saved to.
+#' Returns the residuals estimated by the linear regression model.
+#'
+#' @param object An object of class \code{linreg}.
+#' @param ... Additional arguments.
+#'
+#' @return A numeric vector containing the residuals.
+#' @importFrom stats residuals
 #' @export
-
-resid.linreg <- function(x){
-  return(x$e_hat)
+residuals.linreg <- function(object, ...) {
+  # Convert the n x 1 residual matrix into a numeric vector
+  as.numeric(object$e_hat)
 }
