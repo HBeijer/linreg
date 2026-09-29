@@ -80,7 +80,7 @@ plot.linreg <- function(x, ...) {
       ggplot2::geom_point(shape = 1) +
       ggplot2::stat_summary(
         ggplot2::aes(group = 1),
-        fun = median,
+        fun = stats::median,
         geom = "line",
         colour = "red",
         linewidth = 0.7
