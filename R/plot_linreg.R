@@ -89,7 +89,7 @@ plot.linreg <- function(x, ...) {
       ) +
       ggplot2::geom_text(
         data = plot_data[labelled_scale_observations, ],
-        ggplot2::aes(label = observation),
+        ggplot2::aes(label = .data$observation),
         vjust = -0.5) +
       ggplot2::labs(
         title = "Scale-Location",

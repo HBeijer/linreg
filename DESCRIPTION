@@ -21,6 +21,8 @@ LazyData: true
 URL: https://github.com/HBeijer/linreg
 BugReports: https://github.com/HBeijer/linreg/issues
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports: 
