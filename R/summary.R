@@ -83,7 +83,9 @@ print.summary.linreg <- function(x, digits = 4, ...) {
 
   # Display the coefficient statistics
   cat("\nCoefficients:\n")
-  print(x$coefficients, digits = digits)
+  stats::printCoefmat(x$coefficients,
+                      digits = digits,
+                      signif.stars = TRUE)
 
   # Display the residual standard error and degrees of freedom
   cat("\nResidual standard error:",

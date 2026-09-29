@@ -35,7 +35,7 @@ linreg <- function(formula,data){
   # T VALUES FOR EACH COEFS (use diag for bcs of the covariance matrix)
   t_value <- as.numeric(beta_hat) / sqrt(diag(variance_of_Beta))
   # P VALUES FOR T TEST
-  p_values <- 2 * (1- stats::pt(abs(t_value),df=df))
+  p_values <- 2 * (1 - stats::pt(abs(t_value),df=df))
   # SAVING EVERYTHING IN A LIST
   linreg <- list(
     call = model_call,
