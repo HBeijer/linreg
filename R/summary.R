@@ -84,9 +84,7 @@ print.summary.linreg <- function(x, digits = 4, ...) {
   # Display the residual standard error and degrees of freedom
   cat("\nResidual standard error:",
       format(x$sigma, digits = digits), # cat() does not accept a digits-argument, so we have to do this
-      "on",
-      x$df,
-      "degrees of freedom\n")
+      "on", x$df, "degrees of freedom\n")
 
   # Return the summary object without printing it again
   invisible(x)
