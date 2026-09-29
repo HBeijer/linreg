@@ -1,4 +1,4 @@
-#' MULTIPLE LINEAR REGRESSION
+#' MULTIPLE LINEAR REGRESSION WITH OLS
 #'
 #' This function is used to estimate a multiple linear regression model using the
 #' OLS method for estimating the model parameters.
