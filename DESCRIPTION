@@ -4,12 +4,17 @@ Title: What the Package Does (Title Case)
 Version: 0.1.0
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
-      role = c("aut", "cre")
+      "Hampus", "Beijer",
+      email = "hambe399@student.liu.se",
+      role = "aut","cre"
+    ),
+    person(
+      "Thai", "Pham",
+      email = "duyph635@student.liu.se",
+      role = c("aut")
     )
   )
-Description: More about what it does (maybe more than one line).
+Description: This package is used to estimate a multiple linear regression model using the ordinary least squares method for estimating the model parameters.
     Continuation lines should be indented.
 License: What license is it under?
 Encoding: UTF-8
