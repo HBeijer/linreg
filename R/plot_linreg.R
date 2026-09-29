@@ -6,7 +6,9 @@
 #' @param ... Additional arguments.
 #'
 #' @return Invisibly returns \code{NULL} and displays two diagnostic plots.
+#' @importFrom rlang .data
 #' @export
+
 
 plot.linreg <- function(x, ...) {
 
@@ -42,7 +44,7 @@ plot.linreg <- function(x, ...) {
     # Create the Residuals vs Fitted plot
     residual_plot <- ggplot2::ggplot(
       plot_data,
-      ggplot2::aes(x = fitted, y = residual)
+      ggplot2::aes(x = .data$fitted, y = .data$residual)
     ) +
       ggplot2::geom_point(shape = 1) + # 1 hollow circle for each observation
 
@@ -62,7 +64,7 @@ plot.linreg <- function(x, ...) {
       # Add observation numbers to the selected observations
       ggplot2::geom_text(
         data = plot_data[labelled_observations, ],
-        ggplot2::aes(label = observation), # Use the observation column as the text displayed beside each point.
+        ggplot2::aes(label = .data$observation), # Use the observation column as the text displayed beside each point.
         vjust = -0.5 # text moved farther upward
         ) +
       ggplot2::labs(
@@ -75,7 +77,7 @@ plot.linreg <- function(x, ...) {
     # Create the Scale-Location plot
     scale_location_plot <- ggplot2::ggplot(
       plot_data,
-      ggplot2::aes(x = fitted, y = scale_location)
+      ggplot2::aes(x = .data$fitted, y = .data$scale_location)
     ) +
       ggplot2::geom_point(shape = 1) +
       ggplot2::stat_summary(

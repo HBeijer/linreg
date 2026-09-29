@@ -24,5 +24,6 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports: 
-    ggplot2
+    ggplot2,
+    rlang
 RoxygenNote: 7.3.2
