@@ -6,7 +6,7 @@
 #' @param object An object of class \code{linreg}.
 #' @param ... Additional arguments.
 #'
-#' @return An object of class \code{summary.linreg}.
+#' @return Invisibly returns an object of class \code{summary.linreg}.
 #' @export
 summary.linreg <- function(object, ...) {
   # Check that object belongs to the linreg class
@@ -56,7 +56,11 @@ summary.linreg <- function(object, ...) {
   # Give the result its own S3 class
   class(summary_object) <- "summary.linreg"
 
-  return(summary_object)
+  # Print the summary so that summary() produces output directly
+  print(summary_object, ...)
+
+  # Return the summary object without printing it again
+  invisible(summary_object)
 }
 
 
