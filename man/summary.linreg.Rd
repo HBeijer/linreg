@@ -12,7 +12,7 @@
 \item{...}{Additional arguments.}
 }
 \value{
-An object of class \code{summary.linreg}.
+Invisibly returns an object of class \code{summary.linreg}.
 }
 \description{
 Creates a summary containing the estimated coefficients, standard errors,
