@@ -1,0 +1,95 @@
+---
+title: "linreg"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{linreg}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(linreg)
+```
+
+# Introduction
+
+The package `linreg` can be used to estimate linear regression models. It also contains different methods that can be used on a fitted model.
+
+# The linreg function
+
+The `linreg()` function takes two arguments, `formula` and `data`.
+
+In this example we use the built-in `iris` dataset.
+
+```{r}
+model <- linreg(Petal.Length ~ Species, data = iris)
+```
+
+The model is now saved in the object `model`.
+
+```{r}
+class(model)
+```
+
+# Methods
+
+The following methods can be used on an object of class `linreg`.
+
+## Print
+
+The `print()` method prints the estimated coefficients.
+
+```{r}
+print(model)
+```
+
+## Coef
+
+The `coef()` method returns the estimated coefficients.
+
+```{r}
+coef(model)
+```
+
+## Residuals
+
+The `resid()` method returns the residuals from the model.
+
+```{r}
+resid(model)
+```
+
+## Predictions
+
+The `pred()` method returns the predicted values from the model.
+
+```{r}
+pred(model)
+```
+
+## Summary
+
+The `summary()` method gives a summary of the fitted model.
+
+```{r}
+summary(model)
+```
+
+## Plot
+
+The `plot()` method creates plots for the fitted model.
+
+```{r}
+plot(model)
+```
+
+# Conclusion
+
+The `linreg()` function can be used to estimate a linear regression model. The different methods can then be used to examine the fitted model and its results.
