@@ -24,7 +24,7 @@ plot.linreg <- function(x, ...) {
 
     # Calculate the diagonal elements of the hat matrix
     hat_matrix <- x$X %*% solve(t(x$X) %*% x$X) %*% t(x$X)
-    leverage <- diag(hat_matrix)
+    leverage <- diag(hat_matrix) # Measures how unusual an observation’s predictor values are compared with the rest of the data, and therefore how much potential it has to pull the fitted regression toward itself.
 
     # Calculate standardized residuals
     plot_data$standardized_residual <- plot_data$residual / (sqrt(x$sigma2_hat) * sqrt(1 - leverage))
