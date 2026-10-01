@@ -13,25 +13,20 @@
 #' @export
 
 linreg <- function(formula,data){
-
-  data <- iris
-  formula <- Petal.Length ~ Sepal.Length
-
   model_call <- match.call()
   # We begin by getting det design matrix (intercept and variables) and also the
   # responsvariable.
   X <- stats::model.matrix(formula,data)
   y <- as.matrix(data[all.vars(formula)[1]])
 
-  ##############################################################################
-  # QR DECOMPOSITION
-  ##############################################################################
+
+  # QR DECOMPOSITION ###########################################################
   # QR COMP USING BASE R
   QR <- qr(X)
 
   # COEFFICIENTS USING QR DECOMP
   beta_hat <- qr.coef(QR,y)
-
+  ##############################################################################
   # THE FITTED VALUES
   y_hat <- X %*% beta_hat
   # THE RESIDUALS
