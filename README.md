@@ -18,15 +18,15 @@ pak::pak("HBeijer/linreg")
 
 ## Example
 
-Here are some examples of how linear regression models can be built and used with the linreg package.
+Here are some examples of how linear regression models can be built and be used with the linreg package.
 
 ``` r
 library(linreg)
 
 ## Multiple linear regression model
-
 model <- linreg(Petal.Length ~ Sepal.Length + Sepal.Width, data = iris)
 
-print(model)
+## Summary of the model
+summary(model)
 ```
 
