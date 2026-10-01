@@ -2,21 +2,20 @@
 % Please edit documentation in R/linreg.R
 \name{linreg}
 \alias{linreg}
-\title{MULTIPLE LINEAR REGRESSION WITH OLS}
+\title{Multiple linear regression with OLS}
 \usage{
 linreg(formula, data)
 }
 \arguments{
-\item{formula}{is used to specify which regression model you wish to estimate.}
+\item{formula}{A formula specifying the regression model.}
 
-\item{data}{should be the data frame which you want to estimate the parameters from.}
+\item{data}{A data frame containing the model variables.}
 }
 \value{
-The object \code{linreg} is returned in the last lines of codes. This includes
-the estimated parameters such as the coefficients, fitted values, residuals, degrees of freedom
-residual variance, variance of the coefficients, tvalues and pvalues.
+An object of class \code{linreg}, containing coefficients,
+fitted values, residuals, residual degrees of freedom, residual variance,
+the coefficient covariance matrix, t-values and p-values.
 }
 \description{
-This function is used to estimate a multiple linear regression model using the
-OLS method for estimating the model parameters.
+Estimates a multiple linear regression model using QR decomposition.
 }

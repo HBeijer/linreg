@@ -1,57 +1,68 @@
-#' MULTIPLE LINEAR REGRESSION WITH OLS
+#' Multiple linear regression with OLS
 #'
-#' This function is used to estimate a multiple linear regression model using the
-#' OLS method for estimating the model parameters.
+#' Estimates a multiple linear regression model using QR decomposition.
 #'
-#' @param formula is used to specify which regression model you wish to estimate.
-#' @param data should be the data frame which you want to estimate the parameters from.
+#' @param formula A formula specifying the regression model.
+#' @param data A data frame containing the model variables.
 #'
-#' @return The object \code{linreg} is returned in the last lines of codes. This includes
-#' the estimated parameters such as the coefficients, fitted values, residuals, degrees of freedom
-#' residual variance, variance of the coefficients, tvalues and pvalues.
+#' @return An object of class \code{linreg}, containing coefficients,
+#' fitted values, residuals, residual degrees of freedom, residual variance,
+#' the coefficient covariance matrix, t-values and p-values.
 #'
 #' @export
 
-linreg <- function(formula,data){
+linreg <- function(formula, data) {
   model_call <- match.call()
-  # We begin by getting det design matrix (intercept and variables) and also the
-  # responsvariable.
-  X <- stats::model.matrix(formula,data)
-  y <- as.matrix(data[all.vars(formula)[1]])
 
+  # Build X and y from the same observations.
+  model_data <- stats::model.frame(formula, data)
+  X <- stats::model.matrix(formula, model_data)
+  y <- as.matrix(stats::model.response(model_data))
 
-  # QR DECOMPOSITION ###########################################################
-  # QR COMP USING BASE R
+  # Number of observations, coefficients and residual degrees of freedom.
+  n <- nrow(X)
+  p <- ncol(X)
+  df <- n - p
+
+  if (df <= 0) stop("More observations than coefficients are required.")
+
+  # QR decomposition stores the factors in X = QR.
+  # Q has orthonormal columns (Q'Q = I), and R is upper triangular.
   QR <- qr(X)
 
-  # COEFFICIENTS USING QR DECOMP
-  beta_hat <- qr.coef(QR,y)
-  ##############################################################################
-  # THE FITTED VALUES
+  # Full column rank is needed for unique coefficients and invertible R.
+  if (QR$rank < p) stop("The design matrix must have full column rank.")
+
+  # Substituting X = QR into the normal equations gives:
+  # R'R beta_hat = R'Q'y, which simplifies to R beta_hat = Q'y.
+  # qr.coef() solves this by back substitution without forming X'X.
+  beta_hat <- qr.coef(QR, y)
+
+  # Fitted values and residuals.
   y_hat <- X %*% beta_hat
-  # THE RESIDUALS
   e_hat <- y - y_hat
-  # THE DEGREES OF FREEDOM
-  n <- nrow(data)
-  p <- ncol(X)
-  df <- n-p
-  # THE RESIDUAL VARIANCE
-  sigma2_hat <- as.numeric((t(e_hat) %*% e_hat) / df)
 
-  # VARIANCE
-  # The formula is: sigma2(inverse of R times transpose of R inverse)
-  # We can pick out R using base R
+  # Estimate the residual variance: sum of squared residuals / df.
+  sigma2_hat <- as.numeric(crossprod(e_hat) / df)
+
+  # Since X'X = R'Q'QR = R'R, the estimated covariance matrix is
+  # sigma2_hat * (R'R)^(-1).
+  # We extract R, then use chol2inv(R) to calculate (R'R)^(-1).
   R <- qr.R(QR)
-  R_inverse <- solve(R)
-  R_inverse_transpose <- t(R_inverse)
-  variance_of_Beta <- sigma2_hat * (R_inverse %*% R_inverse_transpose)
+  variance_of_Beta <- sigma2_hat * chol2inv(R)
 
-  # T VALUES FOR EACH COEFS (use diag for bcs of the covariance matrix)
-  t_value <- as.numeric(beta_hat) / sqrt(diag(variance_of_Beta))
-  # P VALUES FOR T TEST
-  p_values <- 2 * (1 - stats::pt(abs(t_value),df=df))
-  # SAVING EVERYTHING IN A LIST
-  linreg <- list(
+  # Default qr() preserves column order for full column rank.
+  dimnames(variance_of_Beta) <- list(colnames(X), colnames(X))
+
+  # Standard errors are the square roots of the covariance diagonal.
+  standard_errors <- sqrt(diag(variance_of_Beta))
+  t_value <- as.numeric(beta_hat) / standard_errors
+
+  # Two-sided p-values for testing whether each coefficient is zero.
+  p_values <- 2 * stats::pt(abs(t_value), df = df, lower.tail = FALSE)
+
+  # Store the results and assign the linreg class.
+  result <- list(
     call = model_call,
     beta_hat = beta_hat,
     variance_of_Beta = variance_of_Beta,
@@ -63,8 +74,7 @@ linreg <- function(formula,data){
     sigma2_hat = sigma2_hat,
     X = X
   )
-  # CHANGING FROM CLASS "list" TO "linreg"
-  class(linreg) <- "linreg"
-  # RETURN!
-  return(linreg)
+
+  class(result) <- "linreg"
+  return(result)
 }
