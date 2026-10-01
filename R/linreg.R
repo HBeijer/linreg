@@ -13,13 +13,25 @@
 #' @export
 
 linreg <- function(formula,data){
+
+  data <- iris
+  formula <- Petal.Length ~ Sepal.Length
+
   model_call <- match.call()
   # We begin by getting det design matrix (intercept and variables) and also the
   # responsvariable.
   X <- stats::model.matrix(formula,data)
   y <- as.matrix(data[all.vars(formula)[1]])
-  # REGRESSION COEFFICIENTS
-  beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+
+  ##############################################################################
+  # QR DECOMPOSITION
+  ##############################################################################
+  # QR COMP USING BASE R
+  QR <- qr(X)
+
+  # COEFFICIENTS USING QR DECOMP
+  beta_hat <- qr.coef(QR,y)
+
   # THE FITTED VALUES
   y_hat <- X %*% beta_hat
   # THE RESIDUALS
@@ -30,8 +42,15 @@ linreg <- function(formula,data){
   df <- n-p
   # THE RESIDUAL VARIANCE
   sigma2_hat <- as.numeric((t(e_hat) %*% e_hat) / df)
-  # THE VARIANCE OF THE REGRESSION COEFS (obs covmatrix)
-  variance_of_Beta <- sigma2_hat * solve( t(X) %*% X)
+
+  # VARIANCE
+  # The formula is: sigma2(inverse of R times transpose of R inverse)
+  # We can pick out R using base R
+  R <- qr.R(QR)
+  R_inverse <- solve(R)
+  R_inverse_transpose <- t(R_inverse)
+  variance_of_Beta <- sigma2_hat * (R_inverse %*% R_inverse_transpose)
+
   # T VALUES FOR EACH COEFS (use diag for bcs of the covariance matrix)
   t_value <- as.numeric(beta_hat) / sqrt(diag(variance_of_Beta))
   # P VALUES FOR T TEST
@@ -54,4 +73,3 @@ linreg <- function(formula,data){
   # RETURN!
   return(linreg)
 }
-
