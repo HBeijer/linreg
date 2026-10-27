@@ -79,6 +79,11 @@ ridgereg_qr <- function(formula, data, lambda) {
 
   X <- stats::model.matrix(formula, dataset)
   y <- as.matrix(stats::model.response(dataset))
+  stopifnot("The response must be a single finite numeric variable" =
+              is.numeric(y) &&
+              !is.complex(y) &&
+              ncol(y) == 1L &&
+              all(is.finite(y)))
 
   # Identify predictor columns, leaving out the intercept.
   predictor_columns <- colnames(X) != "(Intercept)"

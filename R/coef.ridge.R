@@ -9,13 +9,13 @@
 #'   The covariate coefficients refer to the standardised variables.
 #' @importFrom stats coef
 #' @export
-coef.ridgereg <- function(x, ...) {
-  
-  # Making thr coef matrix into a numeric vector
-  coefs <- as.numeric(x$ridge_coefs)
-  
+coef.ridgereg <- function(object, ...) {
+
+  # Making the coef matrix into a numeric vector
+  coefs <- as.numeric(object$ridge_coefs)
+
   # Taking the names of the variables from the design matrix
-  names(coefs) <- colnames(x$X)
-  
-  coefs
+  names(coefs) <- colnames(object$X)
+
+  return(coefs)
 }

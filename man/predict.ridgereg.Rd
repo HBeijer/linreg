@@ -10,13 +10,21 @@
 \item{object}{An object of class \code{ridgereg}.}
 
 \item{newdata}{A data frame containing new observations.
-If omitted, the fitted values are returned.}
+If omitted or NULL, fitted values for the retained training rows
+are returned.}
 
 \item{...}{Additional arguments.}
 }
 \value{
-A numeric vector containing predicted values.
+A numeric vector containing one prediction per row of
+  \code{newdata}, or the fitted training values when \code{newdata}
+  is omitted. Missing predictor values produce missing predictions.
 }
 \description{
 Predict values from a ridgereg object
+}
+\details{
+New observations use the training predictor means and sample standard
+deviations saved in the fitted object. The intercept is not standardised.
+Training factor levels and contrasts are reused.
 }
