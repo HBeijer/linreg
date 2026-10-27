@@ -21,13 +21,17 @@ LazyData: true
 URL: https://github.com/HBeijer/linreg
 BugReports: https://github.com/HBeijer/linreg/issues
 Suggests: 
+    caret,
     knitr,
     MASS,
+    mlbench,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Imports: 
+    dplyr,
     ggplot2,
+    nycflights13,
     rlang
 Config/roxygen2/version: 8.1.1

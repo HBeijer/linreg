@@ -1,0 +1,239 @@
+---
+title: "Ridge regression with caret"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ridgereg}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>", message = FALSE, error = FALSE
+)
+library(linreg)
+library(caret)
+```
+
+# Introduction
+
+We compare three ways to predict house values: a linear regression using every predictor, a linear regression using forward selection, and our own ridge regression. Forward selection removes some predictors, while ridge keeps all predictors and shrinks their coefficients. We use the training data to fit and select models, then evaluate all three on the same test data.
+
+# Prepare the data
+
+The `BostonHousing` dataset from `mlbench` contains 506 observations and 13 predictors. The response, `medv`, is the median value of owner-occupied homes in thousands of US dollars. We use approximately 75% of the observations for training and keep the rest for testing. The seed makes the split reproducible.
+
+```{r data-split}
+utils::data("BostonHousing", package = "mlbench")
+housing <- BostonHousing
+
+set.seed(2026)
+train_rows <- caret::createDataPartition(
+  housing$medv, p = 0.75, list = FALSE
+)
+
+train_data <- housing[train_rows, ]
+test_data <- housing[-train_rows, ]
+
+data.frame(
+  Dataset = c("Training", "Test"),
+  Observations = c(nrow(train_data), nrow(test_data))
+)
+```
+
+We measure prediction error using root mean squared error (RMSE). Smaller values are better. Because the response is measured in thousands of dollars, an RMSE of 4 represents an error scale of about 4,000 dollars.
+
+```{r error-measure}
+rmse <- function(observed, predicted) {
+  sqrt(mean((observed - predicted)^2))
+}
+```
+
+# Fit the full linear regression
+
+The full model uses every available predictor. We create an explicit formula so that the forward-selection procedure can use the same upper limit.
+
+```{r full-model}
+predictors <- setdiff(names(train_data), "medv")
+full_formula <- stats::reformulate(predictors, response = "medv")
+full_model <- stats::lm(full_formula, data = train_data)
+```
+
+# Fit a model using forward selection
+
+Forward selection starts with an intercept-only model, which has zero predictors. At each step, it adds the predictor that improves the fit most. We keep one model at every size from 0 through 13 predictors, so the intercept-only and full models are both candidates. This is a greedy search, rather than a comparison of every possible combination of predictors.
+
+```{r forward-selection}
+# The first list entry is the model with zero predictors.
+forward_models <- vector("list", length(predictors) + 1L)
+forward_models[[1]] <- stats::lm(medv ~ 1, data = train_data)
+
+for (size in seq_along(predictors)) {
+  # Add one predictor to the preceding model.
+  # k = 0 lets us build the complete path without stopping at an AIC minimum.
+  forward_models[[size + 1L]] <- stats::step(
+    forward_models[[size]],
+    scope = list(lower = medv ~ 1, upper = full_formula),
+    direction = "forward",
+    steps = 1,
+    k = 0,
+    trace = 0
+  )
+}
+
+# Compare ordinary AIC, which includes a penalty for model complexity.
+forward_scores <- data.frame(
+  Predictors = 0:length(predictors),
+  AIC = vapply(forward_models, stats::AIC, numeric(1))
+)
+
+best_row <- which.min(forward_scores$AIC)
+forward_model <- forward_models[[best_row]]
+selected_size <- forward_scores$Predictors[best_row]
+
+knitr::kable(forward_scores, digits = 2)
+stats::formula(forward_model)
+```
+
+We choose the model with the lowest AIC, which balances fit against the number of estimated parameters. The selected model contains `r selected_size` predictors. This choice uses only the training data.
+
+# Evaluate the linear models on the training data
+
+These errors describe how closely the models fit the observations used to estimate them. The full model can fit the training data at least as well as a model that uses fewer predictors, but this does not guarantee better predictions for new observations.
+
+```{r training-errors}
+training_results <- data.frame(
+  Model = c("Full linear regression", "Forward selection"),
+  Training_RMSE = c(
+    rmse(train_data$medv, predict(full_model, newdata = train_data)),
+    rmse(train_data$medv, predict(forward_model, newdata = train_data))
+  )
+)
+
+knitr::kable(training_results, digits = 3)
+```
+
+# Connect our ridge regression to caret
+
+The penalty `lambda` controls shrinkage. A value of zero gives unpenalised least squares, while larger values shrink the predictor coefficients more strongly. Our `ridgereg()` standardises predictor columns and leaves the intercept unpenalised.
+
+Caret needs a small interface explaining how to fit our model and obtain predictions. Its `fit` function receives predictor columns in `x`, responses in `y`, and the current penalty in `param$lambda`. We combine `x` and `y` into a data frame and call our own function. Arguments such as `wts` and `lev` belong to caret's interface and are unused in this example.
+
+```{r custom-ridge-model}
+ridge_method <- list(
+  label = "Our ridge regression",
+  library = "linreg",
+  type = "Regression",
+
+  parameters = data.frame(
+    parameter = "lambda",
+    class = "numeric",
+    label = "Ridge penalty"
+  ),
+
+  # This default grid is replaced by tuneGrid in the training call below.
+  grid = function(x, y, len = 5, search = "grid") {
+    data.frame(lambda = 10^seq(-2, 3, length.out = len))
+  },
+
+  fit = function(x, y, wts, param, lev, last, classProbs, ...) {
+    fitting_data <- data.frame(.response = y, as.data.frame(x))
+    linreg::ridgereg(
+      .response ~ ., data = fitting_data, lambda = param$lambda
+    )
+  },
+
+  predict = function(modelFit, newdata, submodels = NULL) {
+    stats::predict(modelFit, newdata = as.data.frame(newdata))
+  },
+
+  # Regression predicts numbers, so class probabilities are unnecessary.
+  prob = NULL,
+
+  # Order the tuning results from stronger to weaker shrinkage.
+  sort = function(x) {
+    x[order(x$lambda, decreasing = TRUE), , drop = FALSE]
+  }
+)
+```
+
+# Choose lambda using 10-fold cross-validation
+
+We divide the training data into ten folds. For each candidate lambda, caret fits the model using nine folds and predicts the remaining fold. It repeats this until every fold has been held out once, then selects the lambda with the lowest average validation RMSE. The test data are not used in this choice.
+
+Standardisation happens inside `ridgereg()` each time it is fitted. This means each cross-validation fit learns means and standard deviations only from its own fitting folds. Predictions reuse those saved values, and we do not standardise the complete dataset beforehand.
+
+```{r ridge-cross-validation}
+lambda_grid <- data.frame(
+  lambda = c(0, 0.1, 1, 5, 10, 25, 50, 100, 500, 1000)
+)
+
+cv_control <- caret::trainControl(
+  method = "cv",
+  number = 10,
+  allowParallel = FALSE
+)
+
+set.seed(2026)
+ridge_cv <- caret::train(
+  medv ~ .,
+  data = train_data,
+  method = ridge_method,
+  tuneGrid = lambda_grid,
+  trControl = cv_control,
+  metric = "RMSE"
+)
+
+knitr::kable(
+  ridge_cv$results[, c("lambda", "RMSE", "RMSESD")],
+  digits = 3
+)
+ridge_cv$bestTune
+```
+
+The selected penalty is `r ridge_cv$bestTune$lambda`. The `RMSESD` column describes variation in validation RMSE across the ten folds. Caret automatically refits the selected model using all the training observations.
+
+```{r inspect-ridge}
+# The final fitted object is produced by our ridgereg() function.
+class(ridge_cv$finalModel)
+head(coef(ridge_cv$finalModel))
+```
+
+The coefficients above refer to standardised predictor columns. The categorical predictor `chas` is encoded into a numeric model column by caret before it reaches our fitting function. We therefore use `predict(ridge_cv, newdata = ...)` so that caret applies the same encoding when predicting new observations.
+
+# Compare all three models on the test data
+
+We now use the held-out test observations for the final comparison. These observations were not used to fit coefficients, select predictors, or choose lambda.
+
+```{r test-comparison}
+test_results <- data.frame(
+  Model = c("Full linear regression", "Forward selection", "Ridge regression"),
+  Training_RMSE = c(
+    training_results$Training_RMSE,
+    rmse(train_data$medv, predict(ridge_cv, newdata = train_data))
+  ),
+  Test_RMSE = c(
+    rmse(test_data$medv, predict(full_model, newdata = test_data)),
+    rmse(test_data$medv, predict(forward_model, newdata = test_data)),
+    rmse(test_data$medv, predict(ridge_cv, newdata = test_data))
+  )
+)
+
+knitr::kable(test_results, digits = 3)
+
+best_test_model <- test_results$Model[which.min(test_results$Test_RMSE)]
+```
+
+# Conclusions
+
+For this split, `r best_test_model` has the lowest test RMSE. The full linear model has a test RMSE of `r round(test_results$Test_RMSE[1], 3)`, forward selection has `r round(test_results$Test_RMSE[2], 3)`, and ridge regression has `r round(test_results$Test_RMSE[3], 3)`. Forward selection uses `r selected_size` predictors, while ridge retains all predictors and uses lambda = `r ridge_cv$bestTune$lambda`.
+
+In this run, the test errors are close. Forward selection gives a slightly smaller error while using fewer predictors, and ridge performs almost the same as the full linear model. The cross-validation table shows that very large penalties increase prediction error, so stronger shrinkage is not always better.
+
+The training errors show how well a model fits known observations; the test errors show how well it predicts held-out observations. The selected lambda is the best among the candidate values according to this cross-validation run.
+
+These results come from one random split of a historical dataset. Another split may change the ranking, so small differences should not be treated as proof that one method is always better.
+
+# References
+
+The custom model interface follows the [caret documentation](https://topepo.github.io/caret/using-your-own-model-in-train.html). Details about the forward-search function are available in the [R documentation for step()](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/step.html). The dataset is documented in [mlbench](https://github.com/cran/mlbench/blob/master/man/BostonHousing.Rd).
