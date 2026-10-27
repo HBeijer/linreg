@@ -29,4 +29,4 @@ Config/testthat/edition: 3
 Imports: 
     ggplot2,
     rlang
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.1.1
