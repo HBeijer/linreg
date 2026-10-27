@@ -67,8 +67,15 @@ ridgereg <- function(formula,data,lambda){
 
   # Preparing data for modelling
   dataset <- stats::model.frame(formula,data)
+  stopifnot("The formula must include an intercept" = attr(stats::terms(dataset), "intercept") == 1L)
+
   X <- stats::model.matrix(formula, dataset)
   y <- as.matrix(stats::model.response(dataset))
+  stopifnot("The response must be a single finite numeric variable" =
+              is.numeric(y) &&
+              !is.complex(y) &&
+              ncol(y) == 1L &&
+              all(is.finite(y)))
 
   # Identify predictor columns, excluding the intercept.
   predictor_columns <- colnames(X) != "(Intercept)"
@@ -79,9 +86,11 @@ ridgereg <- function(formula,data,lambda){
   # Save the training means and standard deviations.
   centers <- attr(scaled_predictors, "scaled:center")
   scales <- attr(scaled_predictors, "scaled:scale")
+  stopifnot("Predictors must have finite, non-zero standard deviations" = all(is.finite(scales) & scales > 0))
 
   # Put the standardized values back into X.
   X[, predictor_columns] <- scaled_predictors
+  if (lambda == 0 && qr(X)$rank < ncol(X)) stop("The design matrix must have full column rank when lambda is zero.") # Adapt from the QR-version
 
   # Determine which coefficients receive the penalty.
   I <- diag(ncol(X))

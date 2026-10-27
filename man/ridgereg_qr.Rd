@@ -7,24 +7,31 @@
 ridgereg_qr(formula, data, lambda)
 }
 \arguments{
-\item{formula}{A formula specifying the response and covariates.
+\item{formula}{A formula specifying the numeric response and covariates.
 The formula must include an intercept.}
 
 \item{data}{A data frame containing the variables in the formula.}
 
 \item{lambda}{A single finite, non-negative number specifying
-the ridge penalty. Larger values give more shrinkage.}
+the ridge penalty. Larger values apply a stronger penalty.}
 }
 \value{
 An object of class \code{ridgereg}, containing:
 \describe{
   \item{call}{The function call.}
-  \item{ridge_coefs}{A matrix of coefficients for the standardised covariates
-    and the unpenalised intercept.}
-  \item{fitted_values}{A one-column matrix of fitted response values.}
-  \item{X}{The standardised design matrix, including the intercept.}
-  \item{y}{The response as a one-column matrix.}
+  \item{ridge_coefs}{A matrix of coefficients for the standardised
+    predictors and the unpenalised intercept.}
+  \item{fitted_values}{A one-column matrix of fitted response values
+    for the original training observations.}
+  \item{X}{The standardised design matrix, including the intercept
+    and excluding the artificial penalty rows.}
+  \item{y}{The response as a one-column matrix, excluding the
+    artificial penalty rows.}
   \item{lambda}{The ridge penalty used.}
+  \item{dataset}{The model frame used for fitting, including the response.}
+  \item{centers}{A named numeric vector of training predictor means.}
+  \item{scales}{A named numeric vector of training predictor sample
+    standard deviations.}
 }
 }
 \description{
@@ -32,20 +39,25 @@ Fits a ridge regression model with standardised covariates.
 The intercept is included but is not penalised.
 }
 \details{
-Covariates are centred and divided by their sample standard deviations.
-They must have finite, non-zero standard deviations.
-The returned coefficients refer to the standardised covariates.
+Predictor columns are centred and divided by their sample standard
+deviations. They must have finite, non-zero standard deviations.
+The intercept column is not standardised.
+The returned coefficients refer to the standardised predictors.
 
-Extra rows are added to the design matrix and response to include
-the ridge penalty. The resulting least-squares problem is solved
-using QR decomposition.
+Extra rows are added to the design matrix and response to represent
+the ridge penalty. The augmented least-squares problem is solved
+using QR decomposition, without explicitly computing a matrix inverse.
 
 When lambda is zero, the design matrix must have full column rank.
 Fitted values are calculated for the observations retained in the
-model frame, excluding the extra penalty rows.
+model frame, excluding the artificial penalty rows.
+
+The original training model frame, predictor means and standard
+deviations are saved to support predictions on new observations
+using the same standardisation as the training data.
 }
 \examples{
-model <- ridgereg(
+model <- ridgereg_qr(
   Petal.Length ~ Sepal.Length + Sepal.Width,
   data = iris,
   lambda = 2
@@ -53,5 +65,7 @@ model <- ridgereg(
 
 model$ridge_coefs
 head(model$fitted_values)
+model$centers
+model$scales
 
 }

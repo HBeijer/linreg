@@ -3,38 +3,50 @@
 #' Fits a ridge regression model with standardised covariates.
 #' The intercept is included but is not penalised.
 #'
-#' @param formula A formula specifying the response and covariates.
+#' @param formula A formula specifying the numeric response and covariates.
 #'   The formula must include an intercept.
 #' @param data A data frame containing the variables in the formula.
 #' @param lambda A single finite, non-negative number specifying
-#'   the ridge penalty. Larger values give more shrinkage.
+#'   the ridge penalty. Larger values apply a stronger penalty.
 #'
 #' @details
-#' Covariates are centred and divided by their sample standard deviations.
-#' They must have finite, non-zero standard deviations.
-#' The returned coefficients refer to the standardised covariates.
+#' Predictor columns are centred and divided by their sample standard
+#' deviations. They must have finite, non-zero standard deviations.
+#' The intercept column is not standardised.
+#' The returned coefficients refer to the standardised predictors.
 #'
-#' Extra rows are added to the design matrix and response to include
-#' the ridge penalty. The resulting least-squares problem is solved
-#' using QR decomposition.
+#' Extra rows are added to the design matrix and response to represent
+#' the ridge penalty. The augmented least-squares problem is solved
+#' using QR decomposition, without explicitly computing a matrix inverse.
 #'
 #' When lambda is zero, the design matrix must have full column rank.
 #' Fitted values are calculated for the observations retained in the
-#' model frame, excluding the extra penalty rows.
+#' model frame, excluding the artificial penalty rows.
+#'
+#' The original training model frame, predictor means and standard
+#' deviations are saved to support predictions on new observations
+#' using the same standardisation as the training data.
 #'
 #' @return An object of class \code{ridgereg}, containing:
 #' \describe{
 #'   \item{call}{The function call.}
-#'   \item{ridge_coefs}{A matrix of coefficients for the standardised covariates
-#'     and the unpenalised intercept.}
-#'   \item{fitted_values}{A one-column matrix of fitted response values.}
-#'   \item{X}{The standardised design matrix, including the intercept.}
-#'   \item{y}{The response as a one-column matrix.}
+#'   \item{ridge_coefs}{A matrix of coefficients for the standardised
+#'     predictors and the unpenalised intercept.}
+#'   \item{fitted_values}{A one-column matrix of fitted response values
+#'     for the original training observations.}
+#'   \item{X}{The standardised design matrix, including the intercept
+#'     and excluding the artificial penalty rows.}
+#'   \item{y}{The response as a one-column matrix, excluding the
+#'     artificial penalty rows.}
 #'   \item{lambda}{The ridge penalty used.}
+#'   \item{dataset}{The model frame used for fitting, including the response.}
+#'   \item{centers}{A named numeric vector of training predictor means.}
+#'   \item{scales}{A named numeric vector of training predictor sample
+#'     standard deviations.}
 #' }
 #'
 #' @examples
-#' model <- ridgereg(
+#' model <- ridgereg_qr(
 #'   Petal.Length ~ Sepal.Length + Sepal.Width,
 #'   data = iris,
 #'   lambda = 2
@@ -42,50 +54,87 @@
 #'
 #' model$ridge_coefs
 #' head(model$fitted_values)
+#' model$centers
+#' model$scales
 #'
 #' @export
-ridgereg_qr <- function(formula,data,lambda){
-  call <- match.call()
-  
-  # Preparing data for modelling
-  dataset <- stats::model.frame(formula,data)
-  X <- stats::model.matrix(formula, dataset)
-  y <- as.matrix(stats::model.response(model_data)) 
-  
-  # Standardising variables (removing intercept: we dont want to scale it!)
-  X[,colnames(X) != "(Intercept)"] <- scale(X[,colnames(X) != "(Intercept)"])
-  
-  # Performing regression 
-  I <- diag(ncol(X))
-  I[1,1] <- 0 
-  
-  # Preparing for the QR decomposition; I am adding extra rows so it works to include
-  # the penalty term.
-  X <- rbind(X,sqrt(lambda)*I)
-  y <- rbind(y,matrix(0,nrow=ncol(X),ncol=1))
-  
+ridgereg_qr <- function(formula, data, lambda) {
 
-  # QR Decomposition
-  decomp <- qr(X)
-  
-  # Claculating the ridge coefficients
-  ridge_coefs <- qr.coef(decomp,y)
-  
-  # Estimating fitted values using ridge coefs  
+  # Save the function call so print() can display it later.
+  call <- match.call()
+
+  # Check that lambda is one finite, non-negative number.
+  stopifnot("lambda must be a single finite, non-negative number" =
+              is.numeric(lambda) &&
+              !is.complex(lambda) &&
+              length(lambda) == 1L &&
+              is.finite(lambda) &&
+              lambda >= 0)
+
+  # Build the model frame first so X and y use the same observations.
+  dataset <- stats::model.frame(formula, data)
+
+  # This implementation expects an intercept as the first column of X.
+  stopifnot("The formula must include an intercept" = attr(stats::terms(dataset), "intercept") == 1L)
+
+  X <- stats::model.matrix(formula, dataset)
+  y <- as.matrix(stats::model.response(dataset))
+
+  # Identify predictor columns, leaving out the intercept.
+  predictor_columns <- colnames(X) != "(Intercept)"
+
+  # Standardize predictors while preserving their matrix structure.
+  scaled_predictors <- scale(X[, predictor_columns, drop = FALSE])
+
+  # Save the training means and standard deviations for prediction.
+  centers <- attr(scaled_predictors, "scaled:center")
+  scales <- attr(scaled_predictors, "scaled:scale")
+
+  # Constant predictors cannot be standardized by division.
+  stopifnot("Predictors must have finite, non-zero standard deviations" = all(is.finite(scales) & scales > 0))
+
+  # Replace predictor values with their standardized versions.
+  # The intercept column remains unchanged.
+  X[, predictor_columns] <- scaled_predictors
+
+  # With no penalty, unique coefficients require full column rank.
+  if (lambda == 0 && qr(X)$rank < ncol(X)) stop("The design matrix must have full column rank when lambda is zero.")
+
+  # Create the penalty matrix.
+  # Zero in the first position leaves the intercept unpenalized.
+  I <- diag(ncol(X))
+  I[1, 1] <- 0
+
+  # Add artificial rows that represent the ridge penalty.
+  # sqrt(lambda) is used because least squares squares the residuals.
+  # Keep X unchanged: it still represents the original observations.
+  X_aug <- rbind(X, sqrt(lambda) * I)
+
+  # The artificial penalty rows have response values of zero.
+  # Add one zero for each extra row in X_aug.
+  y_aug <- rbind(y, matrix(0, nrow = ncol(X), ncol = 1))
+
+  # Solve the augmented least-squares problem using QR decomposition.
+  decomp <- qr(X_aug)
+  ridge_coefs <- qr.coef(decomp, y_aug)
+
+  # Calculate fitted values for the original observations only.
+  # Using X_aug here would also produce values for the artificial rows.
   fitted_values <- X %*% ridge_coefs
-  
-  # Saving values and making a "ridge" class
+
+  # Store the results and the information needed for later prediction.
   results <- list(
     call = call,
     ridge_coefs = ridge_coefs,
     fitted_values = fitted_values,
     X = X,
     y = y,
-    lambda = lambda
+    lambda = lambda,
+    dataset = dataset,
+    centers = centers,
+    scales = scales
   )
-  
+
   class(results) <- "ridgereg"
-  
-  # Lastly returning the regression results
   return(results)
 }
