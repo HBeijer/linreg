@@ -7,12 +7,12 @@
 \method{print}{ridgereg}(x, ...)
 }
 \arguments{
-\item{x}{An object of class \code{linreg}.}
+\item{x}{An object of class \code{ridgereg}.}
 
 \item{...}{Additional arguments.}
 }
 \value{
-Invisibly returns the original \code{linreg} object.
+Invisibly returns the original \code{ridgereg} object.
 }
 \description{
 The input from the user and estimates coefficients from the model is presented

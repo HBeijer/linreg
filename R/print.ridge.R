@@ -2,15 +2,15 @@
 #'
 #' The input from the user and estimates coefficients from the model is presented
 #'
-#' @param x An object of class \code{linreg}.
+#' @param x An object of class \code{ridgereg}.
 #' @param ... Additional arguments.
 #'
-#' @return Invisibly returns the original \code{linreg} object.
+#' @return Invisibly returns the original \code{ridgereg} object.
 #' @export
 print.ridgereg <- function(x,...){
   cat("\nCall: \n")
   print(x$call)
   cat("\nCoefficients:\n")
-  print(drop(x$ridge_coefs)) 
+  print(drop(x$ridge_coefs))
   invisible(x)
 }
